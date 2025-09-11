@@ -1,34 +1,56 @@
 <script setup>
-import { cart } from '@/store';
+import { cart } from '@/store'
 import { useRouter } from 'vue-router'
-import { computed } from 'vue';
-const router = useRouter();
+import { computed } from 'vue'
+import { useUsersStore } from '@/stores/Users'
+
+const router = useRouter()
+const store = useUsersStore()  
+
 const totalPrice = computed(() => {
-  let sum = 0;
+  let sum = 0
   cart.value.forEach(item => {
-    sum += item.price*item.quantity;
-  });
-  return sum;
-});
+    sum += item.price * item.quantity
+  })
+  return sum
+})
+
+const currentUser = computed(() => store.currentuser)
+
+console.log(store.currentuser)
 
 function goToOrderSuccessPage() {
-  router.push('./orderSuccess');
+  router.push('./orderSuccess')
 }
+
+if (!store.currentuser) {
+  router.push("/register")
+}
+
 </script>
+
 
 <template>
   <h1 class="page-title">Checkout</h1>
+
   <div class="checkout-container">
+    <div v-if="store.currentuser" class="user-info">
+  <h3>User Details</h3>
+  <p><strong>Name:</strong> {{ store.currentuser.name }}</p>
+  <p><strong>Email:</strong> {{ store.currentuser.email }}</p>
+  <p><strong>Address:</strong> {{ store.currentuser.address }}</p>
+  <p><strong>Phone:</strong> {{ store.currentuser.phoneNumber }}</p>
+</div>
+
+
     <div class="checkout-header">
       <h3 class="summary-title">Order Summary</h3>
-      <div class="item-count">{{ cart.length }} {{ cart.length === 1 ? 'item' : 'items' }}</div>
     </div>
     
     <div class="order-items">
       <div v-for="item in cart" :key="item.productId" class="order-item">
         <div class="item-info">
           <span class="item-name">{{ item.name }}</span>
-          <!-- <span class="item-id">ID: {{ item.productId }}</span> -->
         </div>
         <div class="item-details">
           <span class="item-price">${{ item.price.toFixed(2) }}</span>
@@ -48,18 +70,41 @@ function goToOrderSuccessPage() {
     <div class="checkout-actions">
       <button class="confirm-btn" @click="goToOrderSuccessPage">
         <span>Confirm order</span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" 
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M5 12h14M12 5l7 7-7 7"/>
         </svg>
       </button>
-      <!-- <button class="continue-btn" @click="router.push('/shop')">
-        Continue Shopping
-      </button> -->
     </div>
   </div>
 </template>
 
+
 <style scoped>
+.user-info {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid #2a2a2a;
+  padding: 16px;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  color: #f3f4f6;
+}
+
+.user-info h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.3rem;
+  color: #a5b4fc;
+  font-weight: 700;
+}
+
+.user-info p {
+  margin: 6px 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+  
+
 body {
   background: #0d0d0d;
   color: #e0e0e0;
@@ -299,5 +344,29 @@ body {
     width: 100%;
     justify-content: space-between;
   }
+
+  .user-info {
+  background: rgba(99, 102, 241, 0.15); /* more visible bluish bg */
+  border: 1px solid #6366f1;            /* brighter border */
+  padding: 16px;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  color: #f9fafb;                       /* pure white text */
+}
+
+.user-info h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.3rem;
+  color: #c7d2fe;                       /* lighter violet for header */
+  font-weight: 700;
+}
+
+.user-info p {
+  margin: 6px 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #e0e7ff;                       /* softer white-blue for contrast */
+}
+ 
 }
 </style>

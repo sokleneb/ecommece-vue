@@ -1,6 +1,6 @@
 <script setup>
 import { product } from "../products";
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { cart } from "@/store";
 
@@ -8,7 +8,7 @@ const route = useRoute();
 const router = useRouter();
 const previousProduct = ref();
 let id = 0;
-const newTodo = ref('')
+const newTodo = ref('');
 const reviews = ref([
   {
     id: id++,
@@ -31,12 +31,12 @@ const reviews = ref([
 ]);
 
 function addTodo(){
-  reviews.value.push({id:id++, user:"new user", rating:4.1,text: newTodo.value})
-  newTodo.value=''
+  reviews.value.push({id:id++, user:"new user", rating:4.1, text: newTodo.value});
+  newTodo.value='';
 }
 
 function removeTodo(review){
-  reviews.value = reviews.value.filter( (r) => r!= review)
+  reviews.value = reviews.value.filter( (r) => r!= review );
 }
 
 onMounted(() => {
@@ -45,10 +45,28 @@ onMounted(() => {
   previousProduct.value = foundProduct;
 });
 
-function addItemToCart(productId) {
-  const item = product.value.find(p => p.productId === productId);
-  if (item) cart.value.push(item);
-  console.log("cart : ", cart);
+function getProductQuantity(productId) {
+  const cartItem = cart.value.find(i => i.productId === productId);
+  return cartItem ? cartItem.quantity : 0;
+}
+function increaseProductQuantity(productId) {
+  const selectedItem = product.value.find(p => p.productId === productId);
+  const cartItem = cart.value.find(i => i.productId === productId);
+  if (cartItem) {
+    cartItem.quantity++;
+  } else if (selectedItem) {
+    cart.value.push({ ...selectedItem, quantity: 1 });
+  }
+}
+function decreaseProductQuantity(productId) {
+  const cartItem = cart.value.find(i => i.productId === productId);
+  if (cartItem) {
+    if (cartItem.quantity > 1) {
+      cartItem.quantity--;
+    } else {
+      cart.value = cart.value.filter(i => i.productId !== productId);
+    }
+  }
 }
 
 function goToHome() {
@@ -56,7 +74,7 @@ function goToHome() {
 }
 
 function goToCart() {
-  router.push('/cart')
+  router.push('/cart');
 }
 </script>
 
@@ -71,7 +89,23 @@ function goToCart() {
       <p class="description">{{ previousProduct.description }}</p>
       <p class="price">Price: ${{ previousProduct.price }}</p>
       <div class="button-row">
-        <button class="cart-btn" @click="addItemToCart(previousProduct.productId), goToCart()">Add to cart</button>
+        
+        <div class="quantity-control" style="margin-bottom:16px;">
+          <button
+  class="quantity-btn"
+  :class="{ 'is-disabled': !getProductQuantity(previousProduct.productId) }"
+  @click.stop="decreaseProductQuantity(previousProduct.productId)"
+  :disabled="!getProductQuantity(previousProduct.productId)"
+  :title="!getProductQuantity(previousProduct.productId) ? 'Add to cart first' : 'Decrease quantity'"
+>
+  -
+</button>
+
+          <input class="quantity-field" type="number" :value="getProductQuantity(previousProduct.productId)" readonly />
+          <button class="quantity-btn" @click="increaseProductQuantity(previousProduct.productId)">+</button>
+        </div>
+        
+        <button class="cart-btn" @click="goToCart">Go to Cart</button>
         <button class="cart-btn" @click="goToHome">Go Back</button>
       </div>
       <hr class="section-divider"/>
@@ -95,8 +129,137 @@ function goToCart() {
   </div>
 </template>
 
-
 <style scoped>
+/* Reviews section styling */
+.reviews-list {
+  margin-left: 8px;
+  margin-top: 20px;
+  background-color: #1a1a1a;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.review-row {
+  border-left: 3px solid #4caf50;
+  padding-left: 18px;
+  margin-bottom: 20px;
+  position: relative;
+  padding-right: 80px;
+}
+
+.review-user {
+  color: #bb86fc;
+  font-weight: 600;
+  margin-right: 10px;
+  display: inline-block;
+}
+
+.review-rating {
+  color: #ffd600;
+  font-weight: 500;
+  margin-right: 15px;
+  display: inline-block;
+}
+
+.review-text {
+  color: #ccc;
+  margin: 6px 0 0 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.review-row button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ff4444;
+  border: none;
+  color: #fff;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.review-row button:hover {
+  background: #e53935;
+}
+
+/* Review form */
+.reviews-list form {
+  display: flex;
+  margin-top: 20px;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.reviews-list input[type="text"] {
+  flex: 1;
+  min-width: 220px;
+  padding: 10px;
+  background-color: #222;
+  border: 1px solid #555;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.reviews-list button[type="submit"] {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.reviews-list button[type="submit"]:hover {
+  background: #43a047;
+}
+
+.reviews-list button[type="submit"] {
+  background: linear-gradient(145deg, #4caf50, #66bb6a);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.reviews-list button[type="submit"]:hover {
+  background: linear-gradient(145deg, #66bb6a, #81c784);
+  transform: translateY(-2px);
+}
+
+.reviews-list button[type="submit"]:active {
+  transform: scale(0.97);
+  background: #388e3c;
+}
+
+.quantity-btn.is-disabled {
+  background: #2e2e2e;
+  color: #888;
+  cursor: not-allowed;
+  opacity: 0.6;
+  pointer-events: auto; /* Allow hover effects */
+}
+
+.quantity-btn.is-disabled:hover {
+  background: #2e2e2e;
+  color: #bbb;
+  transform: none;
+  box-shadow: none;
+}
+
 body {
   background-color: #121212;
 }
@@ -152,6 +315,51 @@ h2.product-name {
 }
 .button-row {
   margin-bottom: 28px;
+}
+/* Inline quantity picker styling (copied from your main page) */
+.quantity-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-start;
+  margin-top: 8px;
+}
+.quantity-btn {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(145deg, #37384b, #45465a);
+  color: #ffd600;
+  font-size: 1.3rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.quantity-btn:hover {
+  background: linear-gradient(145deg, #ffd600, #ffab00);
+  color: #23232b;
+  transform: scale(1.05);
+}
+.quantity-btn:active {
+  transform: scale(0.95);
+}
+.quantity-field {
+  width: 50px;
+  background: #1a1a1a;
+  border: 2px solid #373737;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1.1em;
+  text-align: center;
+  font-weight: bold;
+  padding: 8px 0;
+  pointer-events: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 .cart-btn {
   display: inline-block;
@@ -223,4 +431,3 @@ h2.product-name {
   }
 }
 </style>
-
